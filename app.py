@@ -1,44 +1,24 @@
-from flask import Flask, request, redirect, make_response
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
+todos = []
 
 @app.route('/')
 def index():
-    username = request.cookies.get('user')
-    if username:
-        return f"Hello {username}! <a href='/logout'>Logout</a> | <a href='/transfer'>Transfer</a>"
-    return "<a href='/login'>Login</a>"
+    return render_template('index.html', todos=todos)
 
-@app.route('/login')
-def login():
-    resp = make_response(redirect('/'))
-    resp.set_cookie('user', 'Komal')
-    return resp
+@app.route('/add', methods=['POST'])
+def add():
+    task = request.form.get('task')
+    if task:
+        todos.append(task)
+    return redirect(url_for('index'))
 
-@app.route('/logout')
-def logout():
-    resp = make_response(redirect('/'))
-    resp.delete_cookie('user')
-    return resp
-
-@app.route('/transfer', methods=['GET', 'POST'])
-def transfer():
-    username = request.cookies.get('user')
-    if not username:
-        return "Unauthorized", 401
-
-    if request.method == 'POST':
-        to = request.form['to']
-        amount = request.form['amount']
-        return f"{amount} transferred to {to} by {username}!"
-
-    return '''
-        <form method="POST">
-            Send To: <input name="to"><br>
-            Amount: <input name="amount"><br>
-            <button type="submit">Transfer</button>
-        </form>
-    '''
+@app.route('/delete/<int:index>')
+def delete(index):
+    if 0 <= index < len(todos):
+        todos.pop(index)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
